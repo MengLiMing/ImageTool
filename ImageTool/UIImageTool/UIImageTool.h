@@ -27,14 +27,24 @@
 ///下载图片
 + (void)loadImageWithUrl:(NSString *)urlStr completion:(void (^)(UIImage *image))backImage;
 
-///压缩照片
-+ (NSData *)compressImage:(UIImage *)image percentage:(NSInteger)percentage;
+///比例压缩照片
++ (NSData *)compressImage:(UIImage *)image percentage:(CGFloat)percentage;
 
-///打开相册或相机
-- (void)openAlbumOrPhotoInVC:(UIViewController *)vc completion:(void(^)(UIImage *image))backImage;
+///压缩为多大的图片
++ (NSData *)compressImage:(UIImage *)image maxLength:(CGFloat)maxLength;
+
+
+///打开相册或相机,edit是否使用系统截图
+- (void)openAlbumOrPhotoInVC:(UIViewController *)vc
+                  completion:(void(^)(UIImage *image))backImage
+                     canEdit:(BOOL)edit;
 
 
 ///单独使用打开相机
-- (void)openCamera:(void(^)(UIImage *image))backImage;
+- (void)openCameraInVC:(UIViewController *)vc resultImage:(void(^)(UIImage *image))backImage;
+
+
+///图片模糊
++(UIImage *)coreBlurImage:(UIImage *)image withBlurNumber:(CGFloat)blur;
 
 @end

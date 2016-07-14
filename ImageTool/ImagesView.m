@@ -49,12 +49,12 @@
     switch (_showType) {
         case ImageShowTypeCustom:
         {
-            
-        }
-            break;
-        case ImageShowTypeWaterWall:
-        {
-            
+            UICollectionViewFlowLayout *layout = [[UICollectionViewFlowLayout alloc] init];
+            layout.scrollDirection = UICollectionViewScrollDirectionVertical;
+            layout.minimumLineSpacing = 1;
+            layout.minimumInteritemSpacing = 1;
+            layout.sectionInset = UIEdgeInsetsMake(1, 1, 1, 1);
+            self.collectionViewLayout = layout;
         }
             break;
         case ImageShowTypeQQ:
@@ -82,19 +82,54 @@
     ImageShowCell *cell = [collectionView dequeueReusableCellWithReuseIdentifier:CELL_ID forIndexPath:indexPath];
 
     PhotoModel *model = _photoSource[indexPath.row];
-    [cell setCellWith:model];
-
+    
+    switch (_showType) {
+        case ImageShowTypeQQ:
+        {
+            [cell setCellWith:model withImage:model.aspectRatioThumbnail];
+        }
+            break;
+        case ImageShowTypeCustom:
+        {
+            [cell setCellWith:model withImage:model.thumbnail];
+        }
+            break;
+        default:
+            break;
+    }
+    
     [cell.selectIndexLab tapHandle:^{
-        [[PhotoAlbumManager manager] dealImage:model indexPath:indexPath afterDeal:^(NSIndexPath *resultIndex) {
+        [PhotoAlbumManager dealImage:model sourceArray:_photoSource afterDeal:^(NSIndexPath *resultIndex) {
             [self reloadIndexPath:resultIndex];
-        }];
+        } withSelf:self];
     }];
     return cell;
 }
 
 - (CGSize)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout *)collectionViewLayout sizeForItemAtIndexPath:(NSIndexPath *)indexPath {
     PhotoModel *model = _photoSource[indexPath.row];
-    return CGSizeMake((self.frame.size.height - 4) * model.preview.size.width/model.preview.size.height, self.frame.size.height - 4);
+    switch (_showType) {
+        case ImageShowTypeCustom:
+        {
+            return CGSizeMake((self.frame.size.width - 4)/3,(self.frame.size.width - 4)/3);
+        }
+            break;
+        case ImageShowTypeQQ:
+        {
+                return CGSizeMake((self.frame.size.height - 4) * model.aspectRatioThumbnail.size.width/model.aspectRatioThumbnail.size.height, self.frame.size.height - 4);
+        }
+            break;
+        default:
+            break;
+    }
+
+}
+
+
+
+- (void)collectionView:(UICollectionView *)collectionView didSelectItemAtIndexPath:(NSIndexPath *)indexPath {
+    PhotoModel *model = _photoSource[indexPath.row];
+    [self.selectDelegate didSelectPhoto:model atIndexPath:indexPath];
 }
 
 
@@ -103,6 +138,11 @@
     dispatch_async(dispatch_get_main_queue(), ^{
         [self reloadItemsAtIndexPaths:@[indexPath]];
     });
+}
+
+- (void)reloadModel:(PhotoModel *)model {
+    NSIndexPath *indexPath = [NSIndexPath indexPathForRow:[self.photoSource indexOfObject:model] inSection:0];
+    [self reloadIndexPath:indexPath];
 }
 
 @end

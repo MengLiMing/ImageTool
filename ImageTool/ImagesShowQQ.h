@@ -7,6 +7,7 @@
 //
 
 #import <UIKit/UIKit.h>
+#import "ImagesView.h"
 
 @interface ImagesShowQQ : UIView
 
@@ -18,7 +19,12 @@
 - (void)show;
 - (void)dismiss;
 
-//刷新
+///刷新
 - (void)reloadDataWith:(NSArray *)source;
+
+///设置delegate
+- (void)setDelegate:(id)delegate;
+
+- (void)addImagesArray;
 
 @end

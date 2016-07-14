@@ -30,19 +30,20 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    
+    self.view.backgroundColor = [UIColor redColor];
 }
 
 
 - (IBAction)show:(UIButton *)sender {
 
     PHOTOMANAGER.maxSelect = 4;
-    PHOTOMANAGER.percentage = .5;
-    [PHOTOMANAGER showPhotoCamera:^(UIImage *image) {
+    PHOTOMANAGER.isOriginal = YES;
+    PHOTOMANAGER.dataMaxLength = .5;
+    [PhotoAlbumManager showPhotoCamera:^(UIImage *image) {
         NSLog(@"%@",image);
     } photoAlbums:^(NSArray *result) {
         NSLog(@"%@",result);
-    }];
+    } atViewController:self];
 }
 
 - (void)didReceiveMemoryWarning {

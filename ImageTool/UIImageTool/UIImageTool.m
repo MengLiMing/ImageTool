@@ -9,7 +9,7 @@
 #import <AVFoundation/AVFoundation.h>
 #import <objc/runtime.h>
 #import <AssetsLibrary/AssetsLibrary.h>
-
+#import <Accelerate/Accelerate.h>
 #import "UIImageTool.h"
 #import "AlertViewShow.h"
 
@@ -20,6 +20,8 @@
 
 static UIImageTool *manager;
 @interface UIImageTool () <UIActionSheetDelegate,UIImagePickerControllerDelegate,UINavigationControllerDelegate>
+
+@property (nonatomic, assign) BOOL edit;
 @end
 
 @implementation UIImageTool
@@ -28,6 +30,7 @@ static UIImageTool *manager;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
         manager = [self new];
+        manager.edit = NO;
     });
     return manager;
 }
@@ -134,8 +137,17 @@ static UIImageTool *manager;
 }
 
 #pragma mark - 压缩照片
-+ (NSData *)compressImage:(UIImage *)image percentage:(NSInteger)percentage {
++ (NSData *)compressImage:(UIImage *)image percentage:(CGFloat)percentage {
     NSData *imagedata = UIImageJPEGRepresentation(image, percentage);
+    return imagedata;
+}
+
++ (NSData *)compressImage:(UIImage *)image maxLength:(CGFloat)maxLength {
+    CGFloat max = maxLength * 1048576;
+    NSData *imagedata = UIImageJPEGRepresentation(image, 1);
+    if (imagedata.length > max) {
+        imagedata = UIImageJPEGRepresentation(image, max/imagedata.length);
+    }
     return imagedata;
 }
 
@@ -152,17 +164,18 @@ static UIImageTool *manager;
 }
 
 #pragma mark - 打开相册或相机
-- (void)openCamera:(void(^)(UIImage *image))backImage {
+- (void)openCameraInVC:(UIViewController *)vc resultImage:(void(^)(UIImage *image))backImage {
+    objc_setAssociatedObject(self, PHOTO_KEY, vc, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     objc_setAssociatedObject(self, PHOTOBLOCK_KEY, backImage, OBJC_ASSOCIATION_COPY_NONATOMIC);
     [self takePhoto];
 }
 
-- (void)openAlbumOrPhotoInVC:(UIViewController *)vc completion:(void(^)(UIImage *image))backImage{
+- (void)openAlbumOrPhotoInVC:(UIViewController *)vc completion:(void(^)(UIImage *image))backImage canEdit:(BOOL)edit {
     
     objc_setAssociatedObject(self, PHOTO_KEY, vc, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     objc_setAssociatedObject(self, PHOTOBLOCK_KEY, backImage, OBJC_ASSOCIATION_COPY_NONATOMIC);
-    
-    __block AlertViewShow *alertView = [[AlertViewShow alloc] initWithGraphic:AlertHeadGraphicLeft title:@"请选择选取图片方式" image:[UIImage imageNamed:@"alert"] buttonType:@[@(1),@(1),@(1)] buttonsArray:@[@"打开照相机",@"打开手机相册",@"取消"] tapBlock:^(NSInteger index) {
+    self.edit = edit;
+    __block AlertViewShow *alertView = [[AlertViewShow alloc] initWithGraphic:AlertHeadGraphicCenterLeft title:@"请选择选取图片方式" image:[UIImage imageNamed:@"alert"] buttonType:@[@(1),@(1),@(1)] buttonsArray:@[@"打开照相机",@"打开手机相册",@"取消"] tapBlock:^(NSInteger index) {
         [alertView dismiss];
         switch (index)
         {
@@ -177,7 +190,11 @@ static UIImageTool *manager;
                 break;
         }
     }];
-    alertView.headView.MaxSelfWidth = 20;
+    alertView.lineColor = [UIColor groupTableViewBackgroundColor];
+    alertView.lineHeight = 1;
+    alertView.tapCoverDismiss = NO;
+    alertView.headView.MaxImageHeight = 20;
+    alertView.coverColor = RGBACOLOR(.8, .8, .8, .3);
     [alertView show:AlertViewAnimationLeft];
 }
 
@@ -188,7 +205,7 @@ static UIImageTool *manager;
     UIViewController *vc = objc_getAssociatedObject(self, PHOTO_KEY);
     UIImagePickerController *picker = [[UIImagePickerController alloc]init];
     picker.delegate = self;
-    picker.allowsEditing = YES;
+    picker.allowsEditing = self.edit;
     
     picker.editing = YES;
     UIImagePickerControllerSourceType sourceType = UIImagePickerControllerSourceTypeCamera;
@@ -262,5 +279,56 @@ static UIImageTool *manager;
 
 
 
+#pragma mark - 图片模糊
++(UIImage *)coreBlurImage:(UIImage *)image withBlurNumber:(CGFloat)blur {
+    if (blur < 0.f || blur > 1.f) {
+        blur = 0.5f;
+    }
+    int boxSize = (int)(blur * 40);
+    boxSize = boxSize - (boxSize % 2) + 1;
+    CGImageRef img = image.CGImage;
+    vImage_Buffer inBuffer, outBuffer;
+    vImage_Error error;
+    void *pixelBuffer;
+    //从CGImage中获取数据
+    CGDataProviderRef inProvider = CGImageGetDataProvider(img);
+    CFDataRef inBitmapData = CGDataProviderCopyData(inProvider);
+    //设置从CGImage获取对象的属性
+    inBuffer.width = CGImageGetWidth(img);
+    inBuffer.height = CGImageGetHeight(img);
+    inBuffer.rowBytes = CGImageGetBytesPerRow(img);
+    inBuffer.data = (void*)CFDataGetBytePtr(inBitmapData);
+    pixelBuffer = malloc(CGImageGetBytesPerRow(img) * CGImageGetHeight(img));
+    if(pixelBuffer == NULL)
+        NSLog(@"No pixelbuffer");
+    outBuffer.data = pixelBuffer;
+    outBuffer.width = CGImageGetWidth(img);
+    outBuffer.height = CGImageGetHeight(img);
+    outBuffer.rowBytes = CGImageGetBytesPerRow(img);
+    error = vImageBoxConvolve_ARGB8888(&inBuffer, &outBuffer, NULL, 0, 0, boxSize, boxSize, NULL, kvImageEdgeExtend);
+    if (error) {
+        NSLog(@"error from convolution %ld", error);
+    }
+    CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
+    CGContextRef ctx = CGBitmapContextCreate( outBuffer.data, outBuffer.width, outBuffer.height, 8, outBuffer.rowBytes, colorSpace, kCGImageAlphaNoneSkipLast);
+    CGImageRef imageRef = CGBitmapContextCreateImage (ctx);
+    UIImage *returnImage = [UIImage imageWithCGImage:imageRef];
+    //clean up CGContextRelease(ctx);
+    CGColorSpaceRelease(colorSpace);
+    free(pixelBuffer);
+    CFRelease(inBitmapData);
+    CGColorSpaceRelease(colorSpace);
+    CGImageRelease(imageRef);
+    return returnImage;
+}
+
+
+#pragma mark - 剪切图片
+-(UIImage *)cutFromImage:(UIImage *)image inRect:(CGRect)rect{
+    CGImageRef sourceImageRef = [image CGImage];
+    CGImageRef newImageRef = CGImageCreateWithImageInRect(sourceImageRef, rect);
+    UIImage *newImage = [UIImage imageWithCGImage:newImageRef];
+    return newImage;
+}
 
 @end

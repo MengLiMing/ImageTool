@@ -19,8 +19,8 @@
 }
 
 
-- (void)setCellWith:(PhotoModel *)model {
-    [self.photoImage setImage:model.preview];
+- (void)setCellWith:(PhotoModel *)model withImage:(UIImage *)image{
+    [self.photoImage setImage:image];
     
     self.selectIndexLab.text = model.modelIndex;
     

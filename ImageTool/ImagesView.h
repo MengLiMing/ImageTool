@@ -12,7 +12,6 @@
 //选择相册图片的样式
 typedef NS_ENUM(NSUInteger,ImageShowType) {
     ImageShowTypeCustom,//默认样式，苹果系统样式
-    ImageShowTypeWaterWall,//瀑布流展示
     ImageShowTypeQQ//qq选择样式
 };
 
@@ -29,7 +28,10 @@ typedef NS_ENUM(NSUInteger,ImageShowType) {
  */
 @property (nonatomic, strong) NSArray *photoSource;
 
+@property (nonatomic, weak) id<ImagesViewDelegate> selectDelegate;
+
 - (instancetype)initWithFrame:(CGRect)frame type:(ImageShowType)type;
 
+- (void)reloadModel:(PhotoModel *)model;
 
 @end

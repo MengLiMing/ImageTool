@@ -12,11 +12,19 @@
 
 @interface PhotoModel : NSObject
 
-@property (nonatomic, strong) UIImage *preview;//图片
 @property (nonatomic, strong) ALAsset *asset;//图片的属性
 
+///缩略图
+@property (nonatomic, strong, readonly) UIImage *thumbnail;
+///高宽比缩略图
+@property (nonatomic, strong, readonly) UIImage *aspectRatioThumbnail;
+///旋转过的图
+@property (nonatomic, strong, readonly) UIImage *fullScreenImage;
+///原图
+@property (nonatomic, strong, readonly) UIImage *fullResolutionImage;
+
 @property (nonatomic, copy) NSString *modelIndex;//下标
-@property (nonatomic, strong) NSIndexPath *modelIndexPaht;//对应cell上的位置
+
 
 + (instancetype)libraryPhotoFromAsset:(ALAsset *)theAsset;
 @end

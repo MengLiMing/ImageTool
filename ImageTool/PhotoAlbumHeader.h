@@ -15,6 +15,7 @@
 #import "UIView+Category.h"
 #import "AlertViewShow.h"
 
+#import <Photos/Photos.h>
 #endif /* PhotoAlbumHeader_h */
 
 
@@ -23,3 +24,5 @@
 #define KEYWINDOW [UIApplication sharedApplication].keyWindow
 
 #define RGBACOLOR(r,g,b,a) [UIColor colorWithRed:(r)/255.0 green:(g)/255.0 blue:(b)/255.0 alpha:(a)]
+#define IOS8 ([[UIDevice currentDevice].systemVersion floatValue] >= 8.0)
+

@@ -14,6 +14,6 @@
 @property (weak, nonatomic) IBOutlet UIImageView *photoImage;
 @property (weak, nonatomic) IBOutlet UILabel *selectIndexLab;
 
-- (void)setCellWith:(PhotoModel *)model;
+- (void)setCellWith:(PhotoModel *)model withImage:(UIImage *)image;
 
 @end

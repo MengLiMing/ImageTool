@@ -28,7 +28,7 @@ typedef NS_ENUM(NSInteger,AlertShowType) {
 /**
  * 背景层
  */
-@property (nonatomic, strong) UIView *cover;
+@property (nonatomic, strong) UIToolbar *cover;
 
 /**
  * 偏移量
@@ -283,11 +283,14 @@ typedef NS_ENUM(NSInteger,AlertShowType) {
         
         _tapCoverDismiss = YES;
         
-        _cover = [UIView new];
+        _cover = [UIToolbar new];
+        _cover.barStyle = UIBarStyleBlackTranslucent;
+
         _cover.backgroundColor = RGBACOLOR(.8, .8, .8, .8);
         [_cover tapHandle:^{
             [self tapCover];
         }];
+        
     }
     return _cover;
 }

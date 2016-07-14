@@ -7,6 +7,7 @@
 //
 
 #import "MainViewController.h"
+#import "IAPManager.h"
 
 @interface MainViewController ()
 {
@@ -18,8 +19,10 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-
-    listArray = @[@"获取图片"];
+    
+    self.navigationController.hidesBarsOnSwipe = YES;
+    
+    listArray = @[@"获取图片",@"放大图片",@"应用内支付"];
 }
 
 
@@ -51,7 +54,29 @@
             [self.navigationController pushViewController:[NSClassFromString(@"GetImageViewController") new] animated:YES];
         }
             break;
-            
+        case 1:
+        {
+            [self.navigationController pushViewController:[NSClassFromString(@"ZoomViewController") new] animated:YES];
+
+        }
+            break;
+        case 2:
+        {
+            [[IAPManager sharedIAPManager] purchaseProductForId:@"superpremiumversion"
+                                                     completion:^(SKPaymentTransaction *transaction) {
+                                                         [[UIApplication sharedApplication] setNetworkActivityIndicatorVisible:NO];
+                                                         UIAlertView *thanks = [[UIAlertView alloc] initWithTitle:@"Thanks!"
+                                                                                                          message:@"The extra features are now available"
+                                                                                                         delegate:nil cancelButtonTitle:@"OK" otherButtonTitles:nil];
+                                                         [thanks show];
+                                                     } error:^(NSError *err) {
+                                                         [[UIApplication sharedApplication] setNetworkActivityIndicatorVisible:NO];
+                                                         
+                                                         NSLog(@"An error occured while purchasing: %@", err.localizedDescription);
+                                                         // show an error alert to the user.
+                                                     }];
+        }
+            break;
         default:
             break;
     }
