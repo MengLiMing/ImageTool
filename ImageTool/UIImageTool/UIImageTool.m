@@ -263,12 +263,21 @@ static UIImageTool *manager;
 
 {
     void (^backPhoto)(UIImage *) = objc_getAssociatedObject(self, PHOTOBLOCK_KEY);
-    NSString *type = [info objectForKey:UIImagePickerControllerMediaType];
-    if ([type isEqualToString:@"public.image"])
-    {
-        UIImage* image = [info objectForKey:@"UIImagePickerControllerOriginalImage"];
+    if (picker.sourceType == UIImagePickerControllerSourceTypeCamera) {
+        UIImage *image = [info objectForKey:UIImagePickerControllerOriginalImage];
+        SEL selectorToCall = @selector(image:didFinishSavingWithError:contextInfo:);
+        // 将图像保存到相册（第三个参数需要传入上面格式的选择器对象）
+        UIImageWriteToSavedPhotosAlbum(image, self, selectorToCall, NULL);
         backPhoto(image);
-    }        //关闭相册界面
+    } else {
+        NSString *type = [info objectForKey:UIImagePickerControllerMediaType];
+        if ([type isEqualToString:@"public.image"])
+        {
+            UIImage* image = [info objectForKey:@"UIImagePickerControllerEditedImage"];
+            backPhoto(image);
+        }
+    }
+    //关闭相册界面
     [picker dismissViewControllerAnimated:YES completion:nil];
     
 }
